@@ -5,6 +5,8 @@ import streamlit as st
 import data_trump_polls as dtp
 import altair as alt
 
+UPDATE_INTERVAL = 60 * 60  # 1 hour in seconds
+
 # Load the dataset
 (df_polls, df_new) = dtp.read_dataset(sheet_id=dtp.SHEET_ID, sheet_name=dtp.SHEET_NAME)
 
@@ -42,11 +44,13 @@ st.altair_chart(chart, use_container_width=True)
 
 # Last update summary
 last_row = df_polls.iloc[-1]
-st.write(f"Last Poll: {last_row['end_date']:%Y-%m-%d} by {last_row['pollster']} ({last_row['sponsors']}).  Last check: {datetime.datetime.now():%Y-%m-%d %H:%M:%S}")
+last_update = datetime.datetime.now()
+next_update = last_update + datetime.timedelta(seconds=UPDATE_INTERVAL)
+st.write(f"Last Poll: {last_row['end_date']:%Y-%m-%d} by {last_row['pollster']} ({last_row['sponsors']}).  Last check: {last_update:%Y-%m-%d %H:%M:%S}, next: {next_update:%Y-%m-%d %H:%M:%S}.")
 
 # Credit the data source
 st.write("(Poll data from Mary Radcliffe [public database of polls](https://docs.google.com/spreadsheets/d/1_y0_LJmSY6sNx8qd51T70n0oa_ugN50AVFKuJmXO1-s/edit?usp=sharing))")
 
 
-time.sleep(10)
+time.sleep(60*60)  # Sleep for 1 hour (3600 seconds)
 st.rerun()
