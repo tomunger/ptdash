@@ -1,4 +1,4 @@
-import requests
+import httpx
 import pandas as pd
 import os
 
@@ -33,7 +33,7 @@ def download_from_fred(start_date: str, end_date: str, series_id: str):
         "observation_end": end_date
     }
 
-    response = requests.get(url, params=params)
+    response = httpx.get(url, params=params)
     response.raise_for_status()
     data = response.json()
 
