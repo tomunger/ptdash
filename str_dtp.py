@@ -2,7 +2,6 @@ import typing as t
 import os
 import datetime
 import time
-import dotenv
 import pandas as pd
 
 import streamlit as st
@@ -10,10 +9,9 @@ import data_trump_polls as dtp
 import data_fred
 import altair as alt
 
-VERSION = "0.3.0"
+VERSION = "0.3.1"
 DATE_RANGE = t.Tuple[datetime.datetime, datetime.datetime]
 
-dotenv.load_dotenv()
 
 def get_env_int(key: str, default: int) -> int:
     """
@@ -38,6 +36,7 @@ def whole_day_range(days_of_history: int) -> DATE_RANGE:
 
 UPDATE_INTERVAL = get_env_int('UPDATE_INTERVAL', 3600)  
 UPDATE_POLLS_INTERVAL = get_env_int('UPDATE_POLLS_INTERVAL', 100000) 
+UPDATE_STOCKS_INTERVAL = get_env_int('UPDATE_STOCKS_INTERVAL', 100000) 
 DAYS_OF_HISTORY = get_env_int('DAYS_OF_HISTORY', 90)  # Default to 30 days
 
 
@@ -75,6 +74,7 @@ def presidential_approval_polls(date_range: DATE_RANGE):
         x=alt.X('end_date:T', title='Date', scale=date_scale),
         y=alt.Y('value:Q', title='Percentage'),
         color=alt.Color('variable:N', scale=color_scale, legend=alt.Legend(title="Legend")),
+        href=alt.Href('url_article:N', title='URL'),            # Make each point a link to the article.
         tooltip=['end_date:T', 'value:Q', 'pollster:N', 'sponsors:N', 'sample_size:Q']
     ).transform_fold(
         ['yes', 'no', 'approval'],  # Columns to plot
@@ -95,7 +95,7 @@ def presidential_approval_polls(date_range: DATE_RANGE):
 **Last Poll**: {last_row['end_date']:%Y-%m-%d} by {last_row['pollster']} ({last_row['sponsors']}).  **Last check:** {last_update:%Y-%m-%d %H:%M:%S}, **next:** {next_update:%Y-%m-%d %H:%M:%S}.
 (Poll data from Mary Radcliffe [public database of polls](https://docs.google.com/spreadsheets/d/1_y0_LJmSY6sNx8qd51T70n0oa_ugN50AVFKuJmXO1-s/edit?usp=sharing))""")
 
-
+@st.cache_data(ttl=UPDATE_STOCKS_INTERVAL)
 def load_sp500(date_range: DATE_RANGE) -> pd.DataFrame:
     return data_fred.download_from_fred(
         start_date=date_range[0].strftime("%Y-%m-%d"),
