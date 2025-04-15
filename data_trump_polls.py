@@ -1,7 +1,7 @@
 import typing as t
 import pandas as pd
 
-# Read data from 
+# Read data from a google sheet
 
 SHEET_ID = '1_y0_LJmSY6sNx8qd51T70n0oa_ugN50AVFKuJmXO1-s'
 SHEET_NAME = 'president_approval_polls'
@@ -44,3 +44,28 @@ def read_dataset(df_current: pd.DataFrame | None = None, url: str|None = None, s
         # No existing DF, so create a new, empty one.
         df_new = pd.DataFrame(columns=df.columns)
     return df, df_new
+
+
+NYTIMES_POLL_DATA_RUL = "https://www.nytimes.com/newsgraphics/polls/approval/president.csv"
+
+def read_nyt_dataset () -> pd.DataFrame:
+    """
+    Read the NYT dataset from the URL and return it as a DataFrame.
+    """
+    # Read from a google sheet and drop empty rows.
+    df = pd.read_csv(NYTIMES_POLL_DATA_RUL)
+    df = df.dropna(subset=['end_date'])
+
+
+    # Convert date columns to datetime format
+    format = "mixed"
+    df['start_date'] = pd.to_datetime(df['start_date'], format=format, dayfirst=False)
+    df['end_date'] = pd.to_datetime(df['end_date'], format=format, dayfirst=False)
+    df['url_article'] = df['url']
+    df = df.sort_values(by='end_date')
+    return df
+
+if __name__ == "__main__":
+    # Test the function
+    df = read_nyt_dataset()
+    print(df.head())

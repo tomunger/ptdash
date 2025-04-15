@@ -9,7 +9,7 @@ import data_trump_polls as dtp
 import data_fred
 import altair as alt
 
-VERSION = "0.3.1"
+VERSION = "0.3.2"
 DATE_RANGE = t.Tuple[datetime.datetime, datetime.datetime]
 
 
@@ -43,9 +43,9 @@ DAYS_OF_HISTORY = get_env_int('DAYS_OF_HISTORY', 90)  # Default to 30 days
 
 
 @st.cache_data(ttl=UPDATE_POLLS_INTERVAL)
-def presidential_approval_read(sheet_id: str, sheet_name:str)  -> t.Tuple[pd.DataFrame, pd.DataFrame]:
+def presidential_approval_read(sheet_id: str, sheet_name:str)  -> pd.DataFrame:
     ''' Cash the polling data. '''
-    return dtp.read_dataset(sheet_id=dtp.SHEET_ID, sheet_name=dtp.SHEET_NAME)[0]
+    return dtp.read_nyt_dataset()
 
 
 
@@ -75,7 +75,7 @@ def presidential_approval_polls(date_range: DATE_RANGE):
         y=alt.Y('value:Q', title='Percentage'),
         color=alt.Color('variable:N', scale=color_scale, legend=alt.Legend(title="Legend")),
         href=alt.Href('url_article:N', title='URL'),            # Make each point a link to the article.
-        tooltip=['end_date:T', 'value:Q', 'pollster:N', 'sponsors:N', 'sample_size:Q']
+        tooltip=['end_date:T', 'value:Q', 'pollster:N', 'sponsors:N', 'sample_size:Q', 'url_article:N']
     ).transform_fold(
         ['yes', 'no', 'approval'],  # Columns to plot
         as_=['variable', 'value']   # Fold into variable and value columns
@@ -91,9 +91,11 @@ def presidential_approval_polls(date_range: DATE_RANGE):
     last_row = df_polls.iloc[-1]
     last_update = datetime.datetime.now()
     next_update = last_update + datetime.timedelta(seconds=UPDATE_INTERVAL)
+    # poll_credit = "Mary Radcliffe [public database of polls](https://docs.google.com/spreadsheets/d/1_y0_LJmSY6sNx8qd51T70n0oa_ugN50AVFKuJmXO1-s/edit?usp=sharing)"
+    poll_credit = 'NY Times [Trump poll tracking](https://www.nytimes.com/interactive/polls/donald-trump-approval-rating-polls.html)'
     st.markdown(f"""
 **Last Poll**: {last_row['end_date']:%Y-%m-%d} by {last_row['pollster']} ({last_row['sponsors']}).  **Last check:** {last_update:%Y-%m-%d %H:%M:%S}, **next:** {next_update:%Y-%m-%d %H:%M:%S}.
-(Poll data from Mary Radcliffe [public database of polls](https://docs.google.com/spreadsheets/d/1_y0_LJmSY6sNx8qd51T70n0oa_ugN50AVFKuJmXO1-s/edit?usp=sharing))""")
+(Poll data from {poll_credit})""")
 
 @st.cache_data(ttl=UPDATE_STOCKS_INTERVAL)
 def load_sp500(date_range: DATE_RANGE) -> pd.DataFrame:

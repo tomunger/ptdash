@@ -17,6 +17,8 @@ Also from NYT [president](https://www.nytimes.com/newsgraphics/polls/approval/pr
 
 ## US GDP
 
+https://www.atlantafed.org/cqer/research/gdpnow
+
 ## US Trade
 
 ## Unemployment
@@ -25,3 +27,6 @@ Also from NYT [president](https://www.nytimes.com/newsgraphics/polls/approval/pr
 
 ## House income and expenses
 
+## Trump Visits to his Properties
+
+https://www.citizensforethics.org/reports-investigations/crew-reports/tracking-trumps-visits-to-his-properties-and-other-conflicts-of-interest/
