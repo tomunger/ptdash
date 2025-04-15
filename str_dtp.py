@@ -9,7 +9,7 @@ import data_trump_polls as dtp
 import data_fred
 import altair as alt
 
-VERSION = "0.3.2"
+VERSION = "0.3.3"
 DATE_RANGE = t.Tuple[datetime.datetime, datetime.datetime]
 
 
@@ -93,9 +93,8 @@ def presidential_approval_polls(date_range: DATE_RANGE):
     next_update = last_update + datetime.timedelta(seconds=UPDATE_INTERVAL)
     # poll_credit = "Mary Radcliffe [public database of polls](https://docs.google.com/spreadsheets/d/1_y0_LJmSY6sNx8qd51T70n0oa_ugN50AVFKuJmXO1-s/edit?usp=sharing)"
     poll_credit = 'NY Times [Trump poll tracking](https://www.nytimes.com/interactive/polls/donald-trump-approval-rating-polls.html)'
-    st.markdown(f"""
-**Last Poll**: {last_row['end_date']:%Y-%m-%d} by {last_row['pollster']} ({last_row['sponsors']}).  **Last check:** {last_update:%Y-%m-%d %H:%M:%S}, **next:** {next_update:%Y-%m-%d %H:%M:%S}.
-(Poll data from {poll_credit})""")
+    #st.markdown(f"**Last Poll**: {last_row['end_date']:%Y-%m-%d} by {last_row['pollster']} ({last_row['sponsors']}).  **Last check:** {last_update:%Y-%m-%d %H:%M:%S}, **next:** {next_update:%Y-%m-%d %H:%M:%S}"
+    st.markdown(f"(Poll data from {poll_credit})")
 
 @st.cache_data(ttl=UPDATE_STOCKS_INTERVAL)
 def load_sp500(date_range: DATE_RANGE) -> pd.DataFrame:
