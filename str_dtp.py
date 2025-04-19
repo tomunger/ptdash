@@ -9,7 +9,7 @@ import data_trump_polls as dtp
 import data_fred
 import altair as alt
 
-VERSION = "0.3.3"
+VERSION = "0.3.4"
 DATE_RANGE = t.Tuple[datetime.datetime, datetime.datetime]
 
 
@@ -34,10 +34,11 @@ def whole_day_range(days_of_history: int) -> DATE_RANGE:
     start = end - datetime.timedelta(days=days_of_history)
     return (start, end)
 
-UPDATE_INTERVAL = get_env_int('UPDATE_INTERVAL', 3600)  
-UPDATE_POLLS_INTERVAL = get_env_int('UPDATE_POLLS_INTERVAL', 100000) 
-UPDATE_STOCKS_INTERVAL = get_env_int('UPDATE_STOCKS_INTERVAL', 100000) 
-DAYS_OF_HISTORY = get_env_int('DAYS_OF_HISTORY', 90)  # Default to 30 days
+HOUR_AS_SECONDS = 60 * 60
+UPDATE_INTERVAL = get_env_int('UPDATE_INTERVAL', int(HOUR_AS_SECONDS / 2))  
+UPDATE_POLLS_INTERVAL = get_env_int('UPDATE_POLLS_INTERVAL', 2 * HOUR_AS_SECONDS) 
+UPDATE_STOCKS_INTERVAL = get_env_int('UPDATE_STOCKS_INTERVAL', 2 * HOUR_AS_SECONDS) 
+DAYS_OF_HISTORY = get_env_int('DAYS_OF_HISTORY', 4*30)  
 
 
 
@@ -71,9 +72,9 @@ def presidential_approval_polls(date_range: DATE_RANGE):
     # Create an Altair chart for visualization
     st.write("### Presidential Approval Polls")
     chart = alt.Chart(df_polls).mark_circle(size=40).encode(
-        x=alt.X('end_date:T', title='Date', scale=date_scale),
+        x=alt.X('end_date:T', title="Date", scale=date_scale),
         y=alt.Y('value:Q', title='Percentage'),
-        color=alt.Color('variable:N', scale=color_scale, legend=alt.Legend(title="Legend")),
+        color=alt.Color('variable:N', scale=color_scale, legend=alt.Legend(title="Legend", orient="top")),
         href=alt.Href('url_article:N', title='URL'),            # Make each point a link to the article.
         tooltip=['end_date:T', 'value:Q', 'pollster:N', 'sponsors:N', 'sample_size:Q', 'url_article:N']
     ).transform_fold(
@@ -96,33 +97,39 @@ def presidential_approval_polls(date_range: DATE_RANGE):
     #st.markdown(f"**Last Poll**: {last_row['end_date']:%Y-%m-%d} by {last_row['pollster']} ({last_row['sponsors']}).  **Last check:** {last_update:%Y-%m-%d %H:%M:%S}, **next:** {next_update:%Y-%m-%d %H:%M:%S}"
     st.markdown(f"(Poll data from {poll_credit})")
 
+
+
 @st.cache_data(ttl=UPDATE_STOCKS_INTERVAL)
-def load_sp500(date_range: DATE_RANGE) -> pd.DataFrame:
+def load_fred_data(date_range: DATE_RANGE, series: str) -> pd.DataFrame:
     return data_fred.download_from_fred(
         start_date=date_range[0].strftime("%Y-%m-%d"),
         end_date=date_range[1].strftime("%Y-%m-%d"),
-        series_id="SP500"
+        series_id=series
     )
 
-
-def sp500_chart(date_range: DATE_RANGE):
+def graph_fred_series(date_range: DATE_RANGE, series: str, title: str, y_label: str, height: int = 500, y_inset: int = 0):
     # Load the S&P 500 data
-    df_sp500 = load_sp500(date_range)
+    df_fred = load_fred_data(date_range, series=series)
+
+    st.write(f"### [{title}](https://fred.stlouisfed.org/series/{series})")
+    if df_fred.empty:
+        st.write(f"No data available for {series} in the specified date range.")
+        return
+
 
     # Create an Altair chart for visualization
     # Define a scale for the y-axis based on the min and max values of the Close column
-    y_scale = alt.Scale(domain=[df_sp500['Close'].min()-400, df_sp500['Close'].max()+400])
+    y_scale = alt.Scale(domain=[df_fred["value"].min()-y_inset, df_fred["value"].max()+y_inset])
     date_scale = alt.Scale(domain=[date_range[0], date_range[1]])
     
-    st.write("### S&P 500 Close of Day")
     
-    chart = alt.Chart(df_sp500).mark_line().encode(
-        x=alt.X('Date:T', title='Date', scale=date_scale),
-        y=alt.Y('Close:Q', title='S&P 500 Close', scale=y_scale),
-        tooltip=['Date:T', 'Close:Q']
+    chart = alt.Chart(df_fred).mark_line().encode(
+        x=alt.X("date:T", title="Date", scale=date_scale),
+        y=alt.Y("value:Q", title=y_label, scale=y_scale),
+        tooltip=["date:T", "value:Q"]
     ).properties(
         width='container',  # Automatically adjust width to container
-        height=500          # Set an initial height (can be adjusted dynamically)
+        height=height          # Set an initial height (can be adjusted dynamically)
     ).interactive()
 
     # Display the chart
@@ -140,7 +147,12 @@ st.set_page_config(page_title="Approval Ratings Dashboard", layout="wide")
 st.title("Political Climate Dashboard")
 
 presidential_approval_polls(date_range)
-sp500_chart(date_range)
+graph_fred_series(date_range, series="SP500", title="S&P 500 Close of Day", y_label='S&P 500 Close', y_inset=200)
+graph_fred_series(date_range, series="USEPUINDXD", title="FRED Uncertainty Index", y_label='Uncertainty')
+graph_fred_series(date_range, series="CPIAUCNS", title="FRED Consumer Price Index", y_label='CPI', y_inset=10)
+graph_fred_series(date_range, series="CORESTICKM159SFRBATL", title="FRED Sticky Price Consumer Price Index less Food and Energy", y_label='CPI % Change', y_inset=10)
+graph_fred_series(date_range, series="UNRATE", title="FRED Unemployment Rate", y_label='Unemployment Rate', y_inset=0.5)
+graph_fred_series(date_range, series="GDP", title="FRED GDP", y_label='GDP', y_inset=0.5)
 
 st.markdown(f"version: {VERSION}")
 
